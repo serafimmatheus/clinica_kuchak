@@ -21,3 +21,4 @@ def login():
         return {"token": access_token, "data": email}, HTTPStatus.OK
     else:
         return {"error": "Unauthorized"}, HTTPStatus.UNAUTHORIZED
+        

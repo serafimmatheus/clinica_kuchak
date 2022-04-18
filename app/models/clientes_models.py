@@ -1,6 +1,7 @@
 from dataclasses import dataclass
 from email.policy import default
 from app.configs.database import db
+from werkzeug.security import check_password_hash, generate_password_hash
 
 
 @dataclass
@@ -26,8 +27,6 @@ class ClientesModel(db.Model):
 
     users = db.relationship("UsuarioModel", back_populates="clientes")
     pets = db.relationship("PetsModel", back_populates="pet")
-
-
-
-
+    
+    
 

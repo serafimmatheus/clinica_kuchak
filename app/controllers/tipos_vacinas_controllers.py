@@ -3,8 +3,10 @@ from flask import current_app, jsonify, request, session
 from app.models.tipos_vacinas_model import TiposVacinasModel
 from sqlalchemy.orm import Session
 from datetime import datetime, timedelta
+from flask_jwt_extended import jwt_required
 
 
+@jwt_required()
 def craete_vacinas():
     session: Session = current_app.db.session
     data = request.get_json()
@@ -48,6 +50,7 @@ def craete_vacinas():
     return jsonify(vacinas), HTTPStatus.CREATED
 
 
+@jwt_required()
 def get_all_vacinas():
     session: Session = current_app.db.session
 
@@ -56,6 +59,7 @@ def get_all_vacinas():
     return jsonify(vacinas), HTTPStatus.OK
 
 
+@jwt_required()
 def get_vacinas_by_id(vacina_id):
     session: Session = current_app.db.session
 
@@ -67,6 +71,7 @@ def get_vacinas_by_id(vacina_id):
     return jsonify(vacinas), HTTPStatus.OK
 
 
+@jwt_required()
 def update_vacinas(vacina_id):
     session: Session = current_app.db.session
 
@@ -85,7 +90,7 @@ def update_vacinas(vacina_id):
     return jsonify(vacina)
 
 
-
+@jwt_required()
 def delete_vacinas(vacina_id):
     session: Session = current_app.db.session
 

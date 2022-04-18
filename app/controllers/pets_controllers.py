@@ -2,8 +2,10 @@ from http import HTTPStatus
 from flask import current_app, jsonify, request, session
 from sqlalchemy.orm import Session
 from app.models.pets_models import PetsModel
+from flask_jwt_extended import jwt_required
 
 
+@jwt_required()
 def create_pets():
     session: Session = current_app.db.session
 
@@ -17,6 +19,7 @@ def create_pets():
     return jsonify(pets), HTTPStatus.CREATED
 
 
+@jwt_required()
 def get_all_pets():
     session: Session = current_app.db.session
 
@@ -25,6 +28,7 @@ def get_all_pets():
     return jsonify(pets), HTTPStatus.OK
 
 
+@jwt_required()
 def get_pets_by_id(pet_id: int):
     session: Session = current_app.db.session
 
@@ -33,6 +37,7 @@ def get_pets_by_id(pet_id: int):
     return jsonify(pet_find_id)
 
 
+@jwt_required()
 def atualizando_pets(pet_id: int):
     session: Session = current_app.db.session
 
@@ -47,6 +52,7 @@ def atualizando_pets(pet_id: int):
     return jsonify(pet_find), HTTPStatus.OK
 
 
+@jwt_required()
 def delete_pet_by_id(pet_id: int):
     session: Session = current_app.db.session
 

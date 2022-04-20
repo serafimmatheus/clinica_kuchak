@@ -3,6 +3,7 @@ from flask import current_app, request
 from sqlalchemy.orm import Session, Query
 from app.models.usuarios_models import UsuarioModel
 from flask_jwt_extended import create_access_token
+from datetime import datetime, timedelta
 
 
 def login():
@@ -10,15 +11,22 @@ def login():
 
     data = request.get_json()
 
-    email: UsuarioModel = session.query(UsuarioModel).filter_by(email=data["email"]).first()
+    user: UsuarioModel = session.query(UsuarioModel).filter_by(email=data["email"]).first()
 
-    if not email:
+    if not user:
         return {"error": f"User not found"}, HTTPStatus.NOT_FOUND
 
 
-    if email.verify_password(data["password"]):
-        access_token = create_access_token(identity=email)
-        return {"token": access_token, "data": email}, HTTPStatus.OK
+    if user.verify_password(data["password"]):
+        data = {
+            "id":user.id,
+            "nome": user.nome,
+            "img_url": user.img_url,
+            "email": user.email
+        }
+
+        access_token = create_access_token(identity=data, expires_delta=timedelta(days=1))
+        return {"token": access_token}, HTTPStatus.OK
     else:
         return {"error": "Unauthorized"}, HTTPStatus.UNAUTHORIZED
         

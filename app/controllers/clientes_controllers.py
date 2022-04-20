@@ -2,14 +2,19 @@ from http import HTTPStatus
 from flask import current_app, jsonify, request
 from sqlalchemy.orm import Session
 from app.models.clientes_models import ClientesModel
-from flask_jwt_extended import jwt_required
+from app.models.usuarios_models import UsuarioModel
+from flask_jwt_extended import jwt_required, get_jwt_identity
 
 
 @jwt_required()
 def create_clientes():
     session: Session = current_app.db.session
 
+    user_auth = get_jwt_identity()
+
     data: dict = request.get_json()
+
+    data["user_id"] = user_auth["id"]
 
     cliente = ClientesModel(**data)
 
@@ -23,20 +28,24 @@ def create_clientes():
 def get_all_clientes():
     session: Session = current_app.db.session
 
-    page = request.args.get("page", 1)
-    per_page = request.args.get("per_page", 5)
+    user_auth = get_jwt_identity()
 
-    clientes = session.query(ClientesModel).paginate(page=int(page), per_page=int(per_page))
+    clientes = session.query(ClientesModel).filter_by(user_id=user_auth["id"]).all()
 
-    return jsonify(clientes.items), HTTPStatus.OK
+    return jsonify(clientes), HTTPStatus.OK
 
 
 @jwt_required()
 def get_clientes_by_id(cliente_cpf: str):
     session: Session = current_app.db.session
+    user_auth = get_jwt_identity()
 
     try:
-        clientes = session.query(ClientesModel).get(cliente_cpf)
+        clientes = session.query(ClientesModel).filter_by(user_id=user_auth["id"]).filter_by(cpf=cliente_cpf).first()
+
+        if not clientes:
+            return {"error": f"{cliente_cpf} not found!"},HTTPStatus.NOT_FOUND
+            
         return jsonify(clientes), HTTPStatus.OK
     except:
         return {"message": f"id {cliente_cpf} not found!"}, HTTPStatus.NOT_FOUND
@@ -45,15 +54,18 @@ def get_clientes_by_id(cliente_cpf: str):
 @jwt_required()
 def atualizando_clientes(cliente_cpf: str):
     session: Session = current_app.db.session
-
+    user_auth = get_jwt_identity()
     data: dict = request.get_json()
 
-    cliente_find_cpf = session.query(ClientesModel).filter_by(cpf=cliente_cpf).first()
+    try:
+        cliente_find_cpf = session.query(ClientesModel).filter_by(user_id=user_auth["id"]).filter_by(cpf=cliente_cpf).first()
 
-    for key, value in data.items():
-        setattr(cliente_find_cpf, key, value)
+        for key, value in data.items():
+            setattr(cliente_find_cpf, key, value)
 
-    session.commit()
+        session.commit()
+    except:
+        return {"error": "not found"}, HTTPStatus.NOT_FOUND
 
     return jsonify(cliente_find_cpf), HTTPStatus.OK
 
@@ -61,11 +73,15 @@ def atualizando_clientes(cliente_cpf: str):
 @jwt_required()
 def delete_clientes(cliente_cpf: str):
     session: Session = current_app.db.session
+    user_auth = get_jwt_identity()
 
-    cliente_find_cpf = session.query(ClientesModel).filter_by(cpf=cliente_cpf).first()
+    try:
+        cliente_find_cpf = session.query(ClientesModel).filter_by(user_id=user_auth["id"]).filter_by(cpf=cliente_cpf).first()
 
-    session.delete(cliente_find_cpf)
-    session.commit()
+        session.delete(cliente_find_cpf)
+        session.commit()
+    except:
+        return {"error": "not found!"}, HTTPStatus.NOT_FOUND
 
     return "", HTTPStatus.NO_CONTENT
 

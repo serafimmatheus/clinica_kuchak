@@ -1,9 +1,12 @@
 from http import HTTPStatus
-from flask import current_app, jsonify, request, session
+from flask import current_app, jsonify, request
 from app.models.tipos_vacinas_model import TiposVacinasModel
-from sqlalchemy.orm import Session
+from sqlalchemy.orm import Session, Query
 from datetime import datetime, timedelta
-from flask_jwt_extended import jwt_required
+from flask_jwt_extended import jwt_required, get_jwt_identity
+from app.models.clientes_models import ClientesModel
+from app.models.pets_models import PetsModel
+from app.models.usuarios_models import UsuarioModel
 
 
 @jwt_required()
@@ -53,22 +56,50 @@ def craete_vacinas():
 @jwt_required()
 def get_all_vacinas():
     session: Session = current_app.db.session
+    user_auth = get_jwt_identity()
 
-    vacinas = session.query(TiposVacinasModel).all()
-
-    return jsonify(vacinas), HTTPStatus.OK
+    query: Query = (
+        session
+        .query(TiposVacinasModel)
+        .select_from(TiposVacinasModel)
+        .join(PetsModel)
+        .join(ClientesModel)
+        .join(UsuarioModel)
+        .where(UsuarioModel.id == user_auth["id"]).all()
+    )
+    
+    return jsonify(query), HTTPStatus.OK
 
 
 @jwt_required()
 def get_vacinas_by_id(vacina_id):
     session: Session = current_app.db.session
 
-    vacinas = session.query(TiposVacinasModel).get(vacina_id)
+    user_auth = get_jwt_identity()
 
-    if not vacinas:
-        return {"message": f"id {vacina_id} not found!"}, HTTPStatus.NOT_FOUND
+    try:
+        query: Query = (
+            session
+            .query(TiposVacinasModel)
+            .select_from(TiposVacinasModel)
+            .join(PetsModel)
+            .join(ClientesModel)
+            .join(UsuarioModel)
+            .where(UsuarioModel.id == user_auth["id"]).all()
+        )
 
-    return jsonify(vacinas), HTTPStatus.OK
+        list_id = []
+
+        for i in query:
+            if i.id == vacina_id:
+                list_id.append(i)
+
+
+        return jsonify(list_id[0])
+
+    except IndexError:
+        return {"error": f"id {vacina_id} not found!"}, HTTPStatus.NOT_FOUND
+
 
 
 @jwt_required()
@@ -77,29 +108,63 @@ def update_vacinas(vacina_id):
 
     data: dict = request.get_json()
 
-    vacina = session.query(TiposVacinasModel).get(vacina_id)
+    user_auth = get_jwt_identity()
 
-    if not vacina:
-        return {"message": f"id {vacina_id} not found!"}, HTTPStatus.NOT_FOUND
+    try:
+        vacina: Query = (
+            session
+            .query(TiposVacinasModel)
+            .select_from(TiposVacinasModel)
+            .join(PetsModel)
+            .join(ClientesModel)
+            .join(UsuarioModel)
+            .where(UsuarioModel.id == user_auth["id"]).all()
+        )
 
-    for key, value in data.items():
-        setattr(vacina, key, value)
+        list_id = []
+        for i in vacina:
+            if i.id == vacina_id:
+                list_id.append(i)
 
-    session.commit()
 
-    return jsonify(vacina)
+        for key, value in data.items():
+            setattr(list_id[0], key, value)
+
+        session.commit()
+
+        return jsonify(list_id[0])
+    
+    except IndexError:
+        return {"error": "nao autorizado!"}, HTTPStatus.UNAUTHORIZED
+
 
 
 @jwt_required()
 def delete_vacinas(vacina_id):
     session: Session = current_app.db.session
 
-    vacina = session.query(TiposVacinasModel).get(vacina_id)
+    user_auth = get_jwt_identity()
 
-    if not vacina:
-        return {"message": f"id {vacina_id} not found!"}, HTTPStatus.NOT_FOUND
+    try:
+        vacina: Query = (
+            session.query(TiposVacinasModel)
+            .select_from(TiposVacinasModel)
+            .join(PetsModel)
+            .join(ClientesModel)
+            .join(UsuarioModel)
+            .where(UsuarioModel.id == user_auth["id"]).all()
+        )
 
-    session.delete(vacina)
-    session.commit()
 
-    return "", HTTPStatus.NO_CONTENT
+        list_vacina = []
+        for i in vacina:
+            if i.id == vacina_id:
+                list_vacina.append(i)
+
+        session.delete(list_vacina[0])
+        session.commit()
+
+        return "", HTTPStatus.NO_CONTENT
+    
+    except IndexError:
+        return {"error": "nao autorizado!"}, HTTPStatus.UNAUTHORIZED

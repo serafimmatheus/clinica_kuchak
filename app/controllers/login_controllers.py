@@ -26,7 +26,7 @@ def login():
         }
 
         access_token = create_access_token(identity=data, expires_delta=timedelta(days=1))
-        return {"token": access_token}, HTTPStatus.OK
+        return {"token": access_token, "user": data}, HTTPStatus.OK
     else:
         return {"error": "Unauthorized"}, HTTPStatus.UNAUTHORIZED
         

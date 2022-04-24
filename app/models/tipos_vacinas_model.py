@@ -1,6 +1,5 @@
 from ast import Str
 from dataclasses import dataclass
-from email.policy import default
 from app.configs.database import db
 
 
@@ -21,6 +20,5 @@ class TiposVacinasModel(db.Model):
     data_aplicacao = db.Column(db.Date)
     data_revacinacao = db.Column(db.Date)
     is_pupies = db.Column(db.Boolean, default=False)
-    pet_id = db.Column(db.Integer, db.ForeignKey("pets.id"), nullable=False)
-
-    pet_vacina = db.relationship("PetsModel", back_populates="vacinas")
+    pet_id = db.Column(db.Integer, db.ForeignKey("dogs.id"))
+    cat_id = db.Column(db.Integer, db.ForeignKey("cats.id"))

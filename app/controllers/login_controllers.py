@@ -1,9 +1,9 @@
 from http import HTTPStatus
 from flask import current_app, request
-from sqlalchemy.orm import Session, Query
+from sqlalchemy.orm import Session
 from app.models.usuarios_models import UsuarioModel
 from flask_jwt_extended import create_access_token
-from datetime import datetime, timedelta
+from datetime import timedelta
 
 
 def login():

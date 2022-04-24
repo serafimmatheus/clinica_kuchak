@@ -1,7 +1,5 @@
 from dataclasses import dataclass
-from email.policy import default
 from app.configs.database import db
-from werkzeug.security import check_password_hash, generate_password_hash
 
 
 @dataclass
@@ -15,7 +13,7 @@ class ClientesModel(db.Model):
     endereco: str
     is_whatsapp: bool
     pets: list
-
+    cats: list
 
     cpf = db.Column(db.String(11), primary_key=True)
     nome = db.Column(db.String(50), nullable=False, unique=True)
@@ -26,7 +24,5 @@ class ClientesModel(db.Model):
     user_id = db.Column(db.Integer, db.ForeignKey("usuarios.id"))
 
     users = db.relationship("UsuarioModel", back_populates="clientes")
-    pets = db.relationship("PetsModel", back_populates="pet")
-    
-    
-
+    pets = db.relationship("DogsModel", backref="pet")
+    cats = db.relationship("CatsModel", backref="cat")

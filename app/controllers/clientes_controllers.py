@@ -2,7 +2,6 @@ from http import HTTPStatus
 from flask import current_app, jsonify, request
 from sqlalchemy.orm import Session
 from app.models.clientes_models import ClientesModel
-from app.models.usuarios_models import UsuarioModel
 from flask_jwt_extended import jwt_required, get_jwt_identity
 
 

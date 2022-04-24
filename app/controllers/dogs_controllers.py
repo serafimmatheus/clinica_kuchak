@@ -1,8 +1,7 @@
 from http import HTTPStatus
 from flask import current_app, jsonify, request, session
 from sqlalchemy.orm import Session
-from app.models.pets_models import PetsModel
-from app.models.usuarios_models import UsuarioModel
+from app.models.dogs_models import DogsModel
 from app.models.clientes_models import ClientesModel
 from flask_jwt_extended import jwt_required, get_jwt_identity
 
@@ -13,7 +12,7 @@ def create_pets():
 
     data = request.get_json()
 
-    pets = PetsModel(**data)
+    pets = DogsModel(**data)
 
     session.add(pets)
     session.commit()
@@ -31,7 +30,7 @@ def get_all_pets():
 
     teste = []
     for i in cliente:
-        pets = session.query(PetsModel).filter_by(cliente_id=i.cpf).all()
+        pets = session.query(DogsModel).filter_by(cliente_id=i.cpf).all()
         if pets:
             teste.append(pets)
 
@@ -45,7 +44,7 @@ def get_all_pets():
 def get_pets_by_id(pet_id: int):
     session: Session = current_app.db.session
 
-    pet_find_id = session.query(PetsModel).get(pet_id)
+    pet_find_id = session.query(DogsModel).get(pet_id)
 
     return jsonify(pet_find_id)
 
@@ -55,7 +54,7 @@ def atualizando_pets(pet_id: int):
     session: Session = current_app.db.session
 
     data = request.get_json()
-    pet_find = session.query(PetsModel).get(pet_id)
+    pet_find = session.query(DogsModel).get(pet_id)
 
     for key, value in data.items():
         setattr(pet_find, key, value)
@@ -69,7 +68,7 @@ def atualizando_pets(pet_id: int):
 def delete_pet_by_id(pet_id: int):
     session: Session = current_app.db.session
 
-    pet_find_id = session.query(PetsModel).get(pet_id)
+    pet_find_id = session.query(DogsModel).get(pet_id)
 
     session.delete(pet_find_id)
     session.commit()

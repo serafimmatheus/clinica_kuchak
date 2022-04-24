@@ -11,6 +11,7 @@ def init_app(app: Flask):
 
     from app.models.clientes_models import ClientesModel
     from app.models.usuarios_models import UsuarioModel
-    from app.models.pets_models import PetsModel
+    from app.models.dogs_models import DogsModel
+    from app.models.cats_models import CatsModel
     from app.models.tipos_vacinas_model import TiposVacinasModel
     

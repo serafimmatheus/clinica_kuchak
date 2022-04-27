@@ -4,23 +4,38 @@ from flask import jsonify, request, current_app, session
 from app.models.usuarios_models import UsuarioModel
 from sqlalchemy.orm import Session
 from flask_jwt_extended import jwt_required, get_jwt_identity, create_access_token
+from sqlalchemy.exc import IntegrityError
+from psycopg2.errors import UniqueViolation
 
 
 def create_users():
     session: Session = current_app.db.session
     data: dict = request.get_json()
-
     password_hash = data.pop("password")
 
-    usuarios = UsuarioModel(**data)
+    try:
+        usuarios = UsuarioModel(**data)
 
-    usuarios.password = password_hash
+        usuarios.password = password_hash
 
-    session.add(usuarios)
-    session.commit()
+        session.add(usuarios)
+        session.commit()
 
-    return jsonify(usuarios), HTTPStatus.CREATED
+        return jsonify(usuarios), HTTPStatus.CREATED
 
+    except TypeError:
+        esperado = ["nome", "img_url", "email", "password"]
+        obtido = [key for key in data.keys()]
+
+        return {"esperado": esperado, "obtido": obtido}, HTTPStatus.BAD_REQUEST
+
+    except IntegrityError as e:
+        if type(e.orig) == UniqueViolation:
+            return {"error": "email already exists!"}, HTTPStatus.CONFLICT
+
+    except AttributeError as e:
+        return {"error": f"{e}"}, HTTPStatus.BAD_REQUEST
+        
 
 @jwt_required()
 def get_all_users():

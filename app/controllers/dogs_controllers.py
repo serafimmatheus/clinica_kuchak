@@ -1,23 +1,30 @@
 from http import HTTPStatus
 from flask import current_app, jsonify, request, session
-from sqlalchemy.orm import Session
+from sqlalchemy.orm import Session, Query
 from app.models.dogs_models import DogsModel
 from app.models.clientes_models import ClientesModel
+from app.models.usuarios_models import UsuarioModel
 from flask_jwt_extended import jwt_required, get_jwt_identity
 
 
 @jwt_required()
 def create_pets():
     session: Session = current_app.db.session
+    data: dict = request.get_json()
 
-    data = request.get_json()
+    try:
+        pets = DogsModel(**data)
 
-    pets = DogsModel(**data)
+        session.add(pets)
+        session.commit()
 
-    session.add(pets)
-    session.commit()
+        return jsonify(pets), HTTPStatus.CREATED
+    except TypeError:
+        esperado = ["raca", "nome", "data_nascimento", "pelagem", "is_castrado", "cliente_id"]
+        obtido = [key for key in data.keys()]
 
-    return jsonify(pets), HTTPStatus.CREATED
+        return {"esperado": esperado, "obtido": obtido}, HTTPStatus.BAD_REQUEST
+    
 
 
 @jwt_required()
@@ -25,52 +32,91 @@ def get_all_pets():
     session: Session = current_app.db.session
     user_auth = get_jwt_identity()
 
+    dogs: Query = (
+        session
+        .query(DogsModel)
+        .select_from(DogsModel)
+        .join(ClientesModel)
+        .join(UsuarioModel)
+        .filter_by(id=user_auth["id"])
+        .order_by(DogsModel.id)
+        .all()
+    )
 
-    cliente = session.query(ClientesModel).filter_by(user_id=user_auth["id"]).all()
-
-    teste = []
-    for i in cliente:
-        pets = session.query(DogsModel).filter_by(cliente_id=i.cpf).all()
-        if pets:
-            teste.append(pets)
-
-    if not teste:
-        return jsonify([])
-
-    return jsonify(teste[0]), HTTPStatus.OK
+    return jsonify(dogs), HTTPStatus.OK
 
 
 @jwt_required()
 def get_pets_by_id(pet_id: int):
     session: Session = current_app.db.session
+    user_auth = get_jwt_identity()
 
-    pet_find_id = session.query(DogsModel).get(pet_id)
+    dogs: Query = (
+        session
+        .query(DogsModel)
+        .select_from(DogsModel)
+        .filter_by(id=pet_id)
+        .join(ClientesModel)
+        .join(UsuarioModel)
+        .filter_by(id=user_auth["id"])
+        .first()
+    )
 
-    return jsonify(pet_find_id)
+    if not dogs:
+        return {"error": "id not found!"}, HTTPStatus.NOT_FOUND
+
+
+    return jsonify(dogs), HTTPStatus.OK
 
 
 @jwt_required()
 def atualizando_pets(pet_id: int):
     session: Session = current_app.db.session
-
     data = request.get_json()
-    pet_find = session.query(DogsModel).get(pet_id)
+    user_auth = get_jwt_identity()
 
-    for key, value in data.items():
-        setattr(pet_find, key, value)
+    try:
+        dogs: Query = (
+            session
+            .query(DogsModel)
+            .select_from(DogsModel)
+            .filter_by(id=pet_id)
+            .join(ClientesModel)
+            .join(UsuarioModel)
+            .filter_by(id=user_auth["id"])
+            .first()
+        )
 
-    session.commit()
+        for key, value in data.items():
+            setattr(dogs, key, value)
 
-    return jsonify(pet_find), HTTPStatus.OK
+        session.commit()
+
+        return jsonify(dogs), HTTPStatus.OK
+    except AttributeError:
+        return {"error": "Unauthorized!"}, HTTPStatus.UNAUTHORIZED
 
 
 @jwt_required()
 def delete_pet_by_id(pet_id: int):
     session: Session = current_app.db.session
+    user_auth = get_jwt_identity()
 
-    pet_find_id = session.query(DogsModel).get(pet_id)
+    dog: Query = (
+        session
+        .query(DogsModel)
+        .select_from(DogsModel)
+        .filter_by(id=pet_id)
+        .join(ClientesModel)
+        .join(UsuarioModel)
+        .filter_by(id=user_auth["id"])
+        .first()
+    )
 
-    session.delete(pet_find_id)
+    if not dog:
+        return {"error": "id not found"}, HTTPStatus.NOT_FOUND
+
+    session.delete(dog)
     session.commit()
 
     return "", HTTPStatus.NO_CONTENT

@@ -2,7 +2,7 @@ from flask import Blueprint
 from app.controllers import tipos_vacinas_controllers
 
 
-bp = Blueprint("vacians", __name__, url_prefix="/vacinas")
+bp = Blueprint("vacians", __name__, url_prefix="/users/clientes/pets/vacinas")
 
 
 bp.get("")(tipos_vacinas_controllers.get_all_vacinas)

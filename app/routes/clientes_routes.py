@@ -2,9 +2,10 @@ from flask import Blueprint
 from app.controllers import clientes_controllers
 
 
-bp = Blueprint("clientes", __name__, url_prefix="/clientes")
+bp = Blueprint("clientes", __name__, url_prefix="/users/clientes")
 
 
+# clientes
 bp.get("")(clientes_controllers.get_all_clientes)
 bp.get("/<cliente_cpf>")(clientes_controllers.get_clientes_by_id)
 bp.post("")(clientes_controllers.create_clientes)

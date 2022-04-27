@@ -2,7 +2,7 @@ from flask import Blueprint
 from app.controllers import dogs_controllers
 
 
-bp = Blueprint("dogs", __name__, url_prefix="/dogs")
+bp = Blueprint("dogs", __name__, url_prefix="/users/clientes/dogs")
 
 
 bp.get("")(dogs_controllers.get_all_pets)

@@ -1,6 +1,6 @@
 from http import HTTPStatus
 from flask import current_app, jsonify, request
-from sqlalchemy.orm import Session
+from sqlalchemy.orm import Session, Query
 from app.models.cats_models import CatsModel
 from app.models.clientes_models import ClientesModel
 from app.models.usuarios_models import UsuarioModel
@@ -32,7 +32,14 @@ def get_all_cats():
 
     user_auth = get_jwt_identity()
 
-    cats = session.query(CatsModel).select_from(CatsModel).join(ClientesModel).join(UsuarioModel).where(UsuarioModel.id == user_auth["id"]).all()
+    cats: Query = (
+        session
+        .query(CatsModel)
+        .select_from(CatsModel)
+        .join(ClientesModel)
+        .join(UsuarioModel)
+        .filter_by(id=user_auth["id"])
+        .all())
 
     if not cats:
         return jsonify([]), HTTPStatus.OK
@@ -41,32 +48,79 @@ def get_all_cats():
 
 
 @jwt_required()
-def get_cats_by_id(id: int):
+def get_cats_by_id(cat_id: int):
     session: Session = current_app.db.session
 
     user_auth = get_jwt_identity()
 
-    cats = session.query(CatsModel).select_from(CatsModel).join(ClientesModel).join(UsuarioModel).where(UsuarioModel.id == user_auth["id"]).all()
+    cats: Query = (
+        session
+        .query(CatsModel)
+        .select_from(CatsModel)
+        .filter_by(id=cat_id)
+        .join(ClientesModel)
+        .join(UsuarioModel)
+        .filter_by(id=user_auth["id"])
+        .first()
+    )
 
-    list_cats = []
-    for cat in cats:
-        if cat.id == id:
-            list_cats.append(cat)
-
-    if not list_cats:
-        return jsonify({"error": "gatinho não encontrado!"}), HTTPStatus.NOT_FOUND
+    if not cats:
+        return jsonify({"error": "id not found!"}), HTTPStatus.NOT_FOUND
 
 
-    return jsonify(list_cats[0]), HTTPStatus.OK
+    return jsonify(cats), HTTPStatus.OK
 
 
 @jwt_required()
-def update_cats_by_id(id: int):
-    return {"msg": "update"}
+def update_cats_by_id(cat_id: int):
+    session: Session = current_app.db.session
+    data: dict = request.get_json()
+    user_auth = get_jwt_identity()
+
+    cat: Query = (
+        session
+        .query(CatsModel)
+        .select_from(CatsModel)
+        .filter_by(id=cat_id)
+        .join(ClientesModel)
+        .join(UsuarioModel)
+        .filter_by(id=user_auth["id"])
+        .first()
+    )
+
+    if not cat:
+        return {"error": "id not found!"}, HTTPStatus.NOT_FOUND
+
+    for key, value in data.items():
+        setattr(cat, key, value)
+
+    session.commit()
+
+    return jsonify(cat)
 
 
 @jwt_required()
-def delete_cats_by_id(id: int):
-    return {"msg": "delete"}
+def delete_cats_by_id(cat_id: int):
+    session: Session = current_app.db.session
+    user_auth = get_jwt_identity()
+
+    cat: Query = (
+        session
+        .query(CatsModel)
+        .select_from(CatsModel)
+        .filter_by(id=cat_id)
+        .join(ClientesModel)
+        .join(UsuarioModel)
+        .filter_by(id=user_auth["id"])
+        .first()
+    )
+
+    if not cat:
+        return {"error": "id not found!"}, HTTPStatus.NOT_FOUND
+
+    session.delete(cat)
+    session.commit()
+
+    return "", HTTPStatus.NO_CONTENT
 
     

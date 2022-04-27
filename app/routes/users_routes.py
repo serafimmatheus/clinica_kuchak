@@ -1,5 +1,6 @@
 from flask import Blueprint
 from app.controllers import users_controllers
+from app.controllers import clientes_controllers
 
 
 bp = Blueprint("users", __name__, url_prefix="/users")

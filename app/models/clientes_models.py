@@ -12,7 +12,7 @@ class ClientesModel(db.Model):
     telefone: str
     endereco: str
     is_whatsapp: bool
-    pets: list
+    dogs: list
     cats: list
 
     cpf = db.Column(db.String(11), primary_key=True)
@@ -24,5 +24,5 @@ class ClientesModel(db.Model):
     user_id = db.Column(db.Integer, db.ForeignKey("usuarios.id"))
 
     users = db.relationship("UsuarioModel", back_populates="clientes")
-    pets = db.relationship("DogsModel", backref="pet")
+    dogs = db.relationship("DogsModel", backref="pet")
     cats = db.relationship("CatsModel", backref="cat")

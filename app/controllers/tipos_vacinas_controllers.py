@@ -14,18 +14,7 @@ from psycopg2.errors import ForeignKeyViolation
 @jwt_required()
 def craete_vacinas():
     session: Session = current_app.db.session
-    data = request.get_json()
-
-    query: Query = (
-        session
-        .query(TiposVacinasModel)
-        .select_from(TiposVacinasModel)
-        .join(CatsModel)
-        .join(DogsModel)
-        .join(CatsModel)
-        .join(UsuarioModel)
-        .where()
-    )
+    data: dict = request.get_json()
 
     try:
         if data.get("pet_id"):
@@ -102,9 +91,10 @@ def craete_vacinas():
 
             return jsonify(vacinas), HTTPStatus.CREATED
 
-
-    except:
-        return {"error": "esse animal nao existe!"}, HTTPStatus.NOT_FOUND
+    except TypeError:
+        esperado = ["nome", "data_aplicacao", "data_revacinacao", "is_pupies", "cat_id", "pet_id"]
+        obtido = [key for key in data.keys()]
+        return {"esperado": esperado, "obtido": obtido}, HTTPStatus.CONFLICT
 
 
     
@@ -149,35 +139,32 @@ def get_vacinas_by_id(vacina_id):
             session
             .query(TiposVacinasModel)
             .select_from(TiposVacinasModel)
+            .filter_by(id=vacina_id)
             .join(DogsModel)
             .join(ClientesModel)
             .join(UsuarioModel)
-            .where(UsuarioModel.id == user_auth["id"]).all()
+            .filter_by(id=user_auth["id"])
+            .all()
         )
 
         query_2: Query = (
             session
             .query(TiposVacinasModel)
             .select_from(TiposVacinasModel)
+            .filter_by(id=vacina_id)
             .join(CatsModel)
             .join(ClientesModel)
             .join(UsuarioModel)
-            .where(UsuarioModel.id == user_auth["id"]).all()
+            .filter_by(id=user_auth["id"])
+            .all()
         )
 
         query = query_1 + query_2
 
-        list_id = []
-
-        for i in query:
-            if i.id == vacina_id:
-                list_id.append(i)
-
-
-        return jsonify(list_id[0])
+        return jsonify(query[0])
 
     except IndexError:
-        return {"error": f"id {vacina_id} not found!"}, HTTPStatus.NOT_FOUND
+        return {"error": "id not found!"}, HTTPStatus.NOT_FOUND
 
 
 
@@ -194,39 +181,38 @@ def update_vacinas(vacina_id):
             session
             .query(TiposVacinasModel)
             .select_from(TiposVacinasModel)
+            .filter_by(id=vacina_id)
             .join(DogsModel)
             .join(ClientesModel)
             .join(UsuarioModel)
-            .where(UsuarioModel.id == user_auth["id"]).all()
+            .filter_by(id=user_auth["id"])
+            .all()
         )
 
         vacina_2: Query = (
             session
             .query(TiposVacinasModel)
             .select_from(TiposVacinasModel)
+            .filter_by(id=vacina_id)
             .join(CatsModel)
             .join(ClientesModel)
             .join(UsuarioModel)
-            .where(UsuarioModel.id == user_auth["id"]).all()
+            .filter_by(id=user_auth["id"])
+            .all()
         )
 
         vacina = vacina_1 + vacina_2
 
-        list_id = []
-        for i in vacina:
-            if i.id == vacina_id:
-                list_id.append(i)
-
 
         for key, value in data.items():
-            setattr(list_id[0], key, value)
+            setattr(vacina[0], key, value)
 
         session.commit()
 
-        return jsonify(list_id[0])
+        return jsonify(vacina[0])
     
     except IndexError:
-        return {"error": "nao autorizado!"}, HTTPStatus.UNAUTHORIZED
+        return {"error": "id not found!"}, HTTPStatus.NOT_FOUND
 
 
 
@@ -240,32 +226,31 @@ def delete_vacinas(vacina_id):
         vacina_1: Query = (
             session.query(TiposVacinasModel)
             .select_from(TiposVacinasModel)
+            .filter_by(id=vacina_id)
             .join(DogsModel)
             .join(ClientesModel)
             .join(UsuarioModel)
-            .where(UsuarioModel.id == user_auth["id"]).all()
+            .filter_by(id=user_auth["id"])
+            .all()
         )
 
         vacina_2: Query = (
             session.query(TiposVacinasModel)
             .select_from(TiposVacinasModel)
+            .filter_by(id=vacina_id)
             .join(CatsModel)
             .join(ClientesModel)
             .join(UsuarioModel)
-            .where(UsuarioModel.id == user_auth["id"]).all()
+            .filter_by(id=user_auth["id"])
+            .all()
         )
 
         vacina = vacina_1 + vacina_2
 
-        list_vacina = []
-        for i in vacina:
-            if i.id == vacina_id:
-                list_vacina.append(i)
-
-        session.delete(list_vacina[0])
+        session.delete(vacina[0])
         session.commit()
 
         return "", HTTPStatus.NO_CONTENT
     
     except IndexError:
-        return {"error": "nao autorizado!"}, HTTPStatus.UNAUTHORIZED
+        return {"error": "id not found!"}, HTTPStatus.NOT_FOUND
